@@ -3,10 +3,12 @@
 /**
  * @file
  * PHP5 Library implementing the Goodreads API
- * @link http://goodreads.com/
- * @todo fill in functions with code
+ * @todo functions for the write API
+ * @todo functions for URLs that don't fit well with the execute() 
+ *  function parameters
  * @todo select license
  * @todo document each function with parameters and returns
+ * @see http://www.goodreads.com/api
  */
 /*
  * Implements the Goodreads API.
@@ -41,8 +43,6 @@ class Goodreads {
     $query = http_build_query($options);
 
     $url = 'http://www.goodreads.com/' . $method . '?' . $query;
-
-print $url;
 
     $execution = array();
 
@@ -453,7 +453,6 @@ print $url;
    * Find an author by name.
    *
    * @todo Needs to override the URL
-   *  http://www.goodreads.com/api/author_url/Orson%20Scott%20Card?key=[key]
    * @param 
    * @param 
    * @param 
