@@ -59,7 +59,6 @@ class Goodreads {
   protected function _execute_override($method) {
     $query = '?key=' . $this->key;
     $url = $this->goodreads . $method . $query;
-    print $url;
     return $this->_get_curl($url);
   }
 
@@ -583,7 +582,6 @@ class Goodreads {
   /** 
    * Get info about a member by id or username.
    *
-   * @todo Requires overriding the URL.
    * @todo Test whether 'id' is optional, then it can pass username or ID.
    * @param 
    * @param 
@@ -592,7 +590,7 @@ class Goodreads {
    *  
    */
   public function user_show($user) {
-
+    
   }
 
   /** 
@@ -633,29 +631,38 @@ class Goodreads {
   /** 
    * Get a user's followers.
    *
-   * @todo Requires overriding the URL.
-   * @param 
-   * @param 
-   * @param 
+   * Required authentication. Unimplemented.
+   *
+   * @todo Implement $page paramater.
+   * @todo Authentication.
+   * @param $id
+   *  Goodreads user ID.
+   * @param $page
+   *  Page of results (default 1). Unimplemented.
    * @return
    *  
    */
-  public function user_followers() {
-
+  public function user_followers($id, $page = 1) {
+    $result = $this->_execute_override("user/$id/followers.xml");
+    return $result;
   }
 
   /** 
    * Get people a user is following.
    *
-   * @todo Requires overriding the URL.
-   * @param 
-   * @param 
-   * @param 
+   * Requires authentication. Unimplemented.
+   *
+   * @todo Authentication
+   * @param $id
+   *  Goodreads user ID
+   * @param $options
+   *  (Optional) Array of options. Defaults to XML to account for URL format.
    * @return
-   *  
+   *  Unimplemented.
    */
-  public function user_following() {
-
+  public function user_following($id, $options = array('format' => 'xml')) {
+      $result = $this->_execute("user/$id/following", $options);
+      return $result;
   }
 
   /** 
