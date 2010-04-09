@@ -28,9 +28,22 @@ class Goodreads {
   public function __construct($key, $secret = '') {
     $this->key = $key;
     $this->secret = $secret;
+    $this->goodreads = 'http://www.goodreads.com/';
   }
-  
-  protected function execute($method, $options = array()) {
+
+  protected function _get_curl($url) {
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_exec($ch);
+    $execution = array();
+    $execution['content'] = curl_multi_getcontent($ch);
+    $content = simplexml_load_string($execution['content'], 'SimpleXMLElement', LIBXML_NOCDATA);
+    return $content;
+  }
+
+  protected function _build_query($options = array()) {
     if (empty($options['format'])) {
       $options['format'] = 'xml';
     }
@@ -40,21 +53,28 @@ class Goodreads {
     // construct the query
     $queries = array();
 
-    $query = http_build_query($options);
+    return http_build_query($options);
+  }
 
-    $url = 'http://www.goodreads.com/' . $method . '?' . $query;
+  protected function _execute_override($method) {
+    $query = '?key=' . $this->key;
+    $url = $this->goodreads . $method . $query;
+    print $url;
+    return $this->_get_curl($url);
+  }
 
-    $execution = array();
+  protected function _execute($method, $options = array()) {
+    if (empty($options['format'])) {
+      $options['format'] = 'xml';
+    }
 
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_exec($ch);
-    $execution['headers'] = curl_getinfo($ch);
-    $execution['content'] = curl_multi_getcontent($ch);
-    $content = simplexml_load_string($execution['content'], 'SimpleXMLElement', LIBXML_NOCDATA);
-    return $content;
+    $options['key'] = $this->key;
+    
+    $query = $this->_build_query($options);
+
+    $url = $this->goodreads . $method . '?' . $query;
+
+    return $this->_get_curl($url);
   }
 
   /** 
@@ -85,7 +105,7 @@ class Goodreads {
     $options = array();
     $options['id'] = $id;
     $options['page'] = $page;
-    $result = $this->execute('author/list', $options);
+    $result = $this->_execute('author/list', $options);
     $books = $result->author->books;
     $books = get_object_vars($books);
     return $books['book'];
@@ -103,7 +123,7 @@ class Goodreads {
   public function author_show($id) {
     $options = array();
     $options['id'] = $id;
-    $result = $this->execute('author/show', $options);
+    $result = $this->_execute('author/show', $options);
     return $result->author;
   }
 
@@ -122,7 +142,7 @@ class Goodreads {
   public function book_show($id, $page = 1) {
     $options = array();
     $options['id'] = $id;
-    $result = $this->execute('book/show', $options);
+    $result = $this->_execute('book/show', $options);
     return $result->book;
   }
 
@@ -141,7 +161,7 @@ class Goodreads {
   public function book_show_by_isbn($isbn, $page = 1) {
     $options = array();
     $options['isbn'] = $isbn;
-    $result = $this->execute('book/isbn', $options);
+    $result = $this->_execute('book/isbn', $options);
     return $result->book;
   }
 
@@ -159,7 +179,7 @@ class Goodreads {
     $options = array();
     $options['title'] = $title;
     $options['page'] = $page;
-    $result = $this->execute('book/title', $options);
+    $result = $this->_execute('book/title', $options);
     return $result->book;
   }
 
@@ -217,7 +237,7 @@ class Goodreads {
       $options['id'] = $id;
       $options['type'] = $type;
       $options['page'] = $page;
-      $result = $this->execute('comment', $options);
+      $result = $this->_execute('comment', $options);
       return $result; 
     }
     else {
@@ -241,23 +261,25 @@ class Goodreads {
     $options = array();
     $options['lat'] = $lat;
     $options['lng'] = $lng;
-    $result = $this->execute('event', $options);
+    $result = $this->_execute('event', $options);
     return $result->events;
   }
 
   /** 
    * Get the books from a listopia list.
    *
-   * @todo override URL format, as it's slightly different than other calls
-   * @param 
-   * @param 
-   * @param 
-   * @return
+   * @param $id
+   *  Goodreads ID for the list.
+   * @return array
+   *  An array of objects, each with information about the book.
    *  
    */
-  public function list_show($options = array()) {
-    $result = $this->execute('list/show', $options);
-    return $result->list;
+  public function list_show($id) {
+    $result = $this->_execute_override("list/show/$id.xml");
+    $list = $result->list;
+    $books = $list->books;
+    $book_list = get_object_vars($books);
+    return $book_list['book'];
   }
 
   /** 
@@ -272,7 +294,7 @@ class Goodreads {
   public function list_show_tag($name) {
     $options = array();
     $options['name'] = $name;
-    $result = $this->execute('list/show_tag', $options);
+    $result = $this->_execute('list/show_tag', $options);
     $lists = $result->lists;
     $list = get_object_vars($lists);
     return $list['list'];
@@ -377,7 +399,7 @@ class Goodreads {
 //    if ($search != NULL) {
 //      $options['search[]']
 //    }
-    $result = $this->execute('review/list', $options);
+    $result = $this->_execute('review/list', $options);
     $reviews = $result->reviews;
     $reviews = get_object_vars($reviews);
     return $reviews['review'];
@@ -393,7 +415,7 @@ class Goodreads {
    *  
    */
   public function review_recent_reviews($options = array()) {
-    $result = $this->execute('review/recent_reviews', $options);
+    $result = $this->_execute('review/recent_reviews', $options);
     $reviews = $result->reviews;
     $reviews = get_object_vars($reviews);
     return $reviews['review'];
@@ -414,7 +436,7 @@ class Goodreads {
     $options = array();
     $options['id'] = $id;
     $options['page'] = $page;
-    $result = $this->execute('review/show', $options);
+    $result = $this->_execute('review/show', $options);
     return $result->review;
   }
 
@@ -432,7 +454,7 @@ class Goodreads {
     $options = array();
     $options['user_id'] = $user_id;
     $options['book_id'] = $book_id;
-    $result = $this->execute('review/show_by_user_and_book', $options);
+    $result = $this->_execute('review/show_by_user_and_book', $options);
     return $result->review;
   }
 
@@ -492,7 +514,7 @@ class Goodreads {
       $options['search[field]'] = 'all';
     }
     $options['q'] = $q;
-    $result = $this->execute('search/search', $options);
+    $result = $this->_execute('search/search', $options);
     $search = $result->search->results;
     $search = get_object_vars($search);
     return $search['work']; 
@@ -538,7 +560,7 @@ class Goodreads {
     $options = array();
     $options['user_id'] = $user_id;
     $options['page'] = $page;
-    $result = $this->execute('shelf/list', $options);
+    $result = $this->_execute('shelf/list', $options);
     $shelves = $result->shelves;
     $shelves = get_object_vars($shelves);
     return $shelves['user_shelf'];
@@ -602,7 +624,7 @@ class Goodreads {
     }
     $options['id'] = $id;
     $options['page'] = $page;
-    $result = $this->execute('friend/user', $options);
+    $result = $this->_execute('friend/user', $options);
     $friends = $result->friends;
     $friends = get_object_vars($friends);
     return $friends['user'];
