@@ -141,6 +141,7 @@ class Goodreads {
   public function book_show($id, $page = 1) {
     $options = array();
     $options['id'] = $id;
+    $options['page'] = $page;
     $result = $this->_execute('book/show', $options);
     return $result->book;
   }
@@ -160,6 +161,7 @@ class Goodreads {
   public function book_show_by_isbn($isbn, $page = 1) {
     $options = array();
     $options['isbn'] = $isbn;
+    $options['page'] = $page;
     $result = $this->_execute('book/isbn', $options);
     return $result->book;
   }
@@ -513,6 +515,7 @@ class Goodreads {
       $options['search[field]'] = 'all';
     }
     $options['q'] = $q;
+    $options['page'] = $page;
     $result = $this->_execute('search/search', $options);
     $search = $result->search->results;
     $search = get_object_vars($search);
