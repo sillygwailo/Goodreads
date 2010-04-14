@@ -56,6 +56,10 @@ class Goodreads {
     return http_build_query($options);
   }
 
+  protected function _execute_oauth($method, $options) {
+
+  }
+
   protected function _execute_override($method) {
     $query = '?key=' . $this->key;
     $url = $this->goodreads . $method . $query;
