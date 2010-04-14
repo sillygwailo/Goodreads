@@ -308,14 +308,29 @@ class Goodreads {
   /** 
    * Add a quote.
    *
-   * @param 
-   * @param 
-   * @param 
-   * @return
+   * @param $body
+   *  Body text of the quote. (required)
+   * @param $author
+   *  Name of the quote author (required)
+   * @param $options
+   *  Array of optional parameters.
+   *  - book_id: Goodreads ID of the book from which the quote was taken
+   *  - author_id: Goodreads ID of the author.
+   *  - tags: Comma-separated tags
+   *  - isbn: ISBN of the book from which the quote was taken. This will not override the book_id if it was provided.
+   * @return boolean
+   *  TRUE if successful.
    *  
    */
-  public function quotes_create() {
-
+  public function quotes_create($body, $author, $options = array()) {
+    $options['quote[body]'] = $body;
+    $options['quote[author_name]'] = $author;
+    if (!empty($options)) {
+      foreach (array_keys($options) as $quote_key) {
+        $options["quote[$quote_key]"] = isset($options[$quote_key]) ? $options[$quote_key]: NULL;
+      }
+    }
+    $result = $this->_execute_oauth("quotes.xml", $options);
   }
 
   /** 
